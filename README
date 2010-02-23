@@ -1,0 +1,31 @@
+Copyright (c) 2009,2010 Dennis Kaarsemaker <dennis@kaarsemaker.net>
+
+Inspect your models and database and print Print SQL statements for changes in
+models since the table was created/fixed. Supported changes are:
+
+- ALTER TABLE to add/drop columns
+- ALTER TABLE to change the length of VARCHAR fields
+- ALTER TABLE to change default values
+- CREATE INDEX for new ForeignKey and OneToOne fields
+- CREATE TABLE for new m2m relations
+
+Not (yet) supported:
+- Databases other than MySQL (sqlite will never be supported, others can
+  possibly be supported, patches welcome)
+- Changes in unique_together
+- Field type changes (they will be detected and warned about though)
+- Index additions/removals
+- Django 1.2+
+- Deleting old m2m tables
+- Parent changes in multi-table inheritance
+
+If you need those, a complete migration framework like django-south is a
+better option for you.
+
+Install: python setup.py install
+Usage: 
+- Add 'sqlfixtables' to INSTALLED_APPS 
+- Run: ./manage.py sqlfixtables <appname>
+
+Compatible with django 1.0 and 1.1. Tested only on MySQL, bugreports or
+testreports for other databases are welcome.
