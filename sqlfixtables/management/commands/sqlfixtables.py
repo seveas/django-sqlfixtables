@@ -2,6 +2,7 @@ from django import get_version
 from django.core.management.base import AppCommand
 from django.conf import settings
 from django.db import connection, models
+from django.db.utils import DatabaseError
 from optparse import make_option
 import re
 import sys
@@ -9,7 +10,7 @@ import sys
 # Since this thing relies on django internals that are not guaranteed to be stable,
 # do a strict version check.
 COMPAT_MIN = '1.0'
-COMPAT_MAX = '1.1.9999'
+COMPAT_MAX = '1.3.9999'
 
 class Command(AppCommand):
     help = """Print SQL statements for model changes, including
@@ -24,7 +25,6 @@ Not (yet) supported:
 - Changes in unique_together
 - Field type changes (they will be detected and warned about though)
 - Index additions/removals
-- Django 1.2+
 - Deleting old m2m tables
 - Parent changes in multi-table inheritance
 
@@ -42,7 +42,7 @@ better option for you.
         if version < COMPAT_MIN or version > COMPAT_MAX:
             print "This command is not compatible with django version %s" % version
             sys.exit(1)
-        return u'\n'.join(sql_fix_table(app, options['drop_columns'],  self.style)).encode('utf-8')
+        return (u'\n%s\n' % u'\n'.join(sql_fix_table(app, options['drop_columns'],  self.style))).encode('utf-8')
 
 def sql_fix_table(app, drop_columns, style):
     if settings.DATABASE_ENGINE == 'dummy':
@@ -55,7 +55,10 @@ def sql_fix_table(app, drop_columns, style):
         raise CommandError("This has only been tested with MySQL and probably doesn't work for others")
 
     all_models = models.get_models()
-    app_models = models.get_models(app)
+    if get_version() < '1.2':
+        app_models = models.get_models(app)
+    else:
+        app_models = models.get_models(app, include_auto_created=True)
     pending_references = {}
     final_output = []
 
@@ -83,7 +86,12 @@ def sql_alter_table(connection, model, style, known_models, drop_columns):
     qn = connection.ops.quote_name
     fields = dict([(x.column, x) for x in opts.local_fields])
     cursor = connection.cursor()
-    cursor.execute('DESCRIBE %s' % qn(opts.db_table))
+    try:
+        cursor.execute('DESCRIBE %s' % qn(opts.db_table))
+    except DatabaseError:
+        # This is a new m2m table, do a full creation
+        sql, references = connection.creation.sql_create_model(model, style, known_models)
+        return sql, references
     final_output = []
     m2m_sql = []
     pending_references = {}
@@ -95,11 +103,9 @@ def sql_alter_table(connection, model, style, known_models, drop_columns):
 
         field = fields.pop(f_name, None)
 
-
-
         # Drop columns no longer relevant
         if not field:
-            final_output.append(style.NOTICE('-- Field %s no longer exists in the model' % f_name))
+            final_output.append(style.NOTICE('-- Field %s no longer exists in the %s model' % (f_name, model.__name__)))
             if drop_columns:
                 final_output.append(' '.join([style.SQL_KEYWORD('ALTER TABLE'),
                     style.SQL_TABLE(qn(opts.db_table)),

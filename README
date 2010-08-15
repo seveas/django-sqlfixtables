@@ -15,7 +15,6 @@ Not (yet) supported:
 - Changes in unique_together
 - Field type changes (they will be detected and warned about though)
 - Index additions/removals
-- Django 1.2+
 - Deleting old m2m tables
 - Parent changes in multi-table inheritance
 
