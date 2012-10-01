@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
  
 setup(name='django-sqlfixtables',
-    version=".".join(map(str, __import__("sqlfixtables").__version__)),
+    version="1.2",
     description='Management command for fixing tables after model changes',
     author='Dennis Kaarsemaker',
     author_email='dennis@kaarsemaker.net',

@@ -1,4 +1,4 @@
-Copyright (c) 2009,2010 Dennis Kaarsemaker <dennis@kaarsemaker.net>
+Copyright (c) 2009-2012 Dennis Kaarsemaker <dennis@kaarsemaker.net>
 
 Inspect your models and database and print Print SQL statements for changes in
 models since the table was created/fixed. Supported changes are:
@@ -26,5 +26,5 @@ Usage:
 - Add 'sqlfixtables' to INSTALLED_APPS 
 - Run: ./manage.py sqlfixtables <appname>
 
-Compatible with django 1.0 and 1.1. Tested only on MySQL, bugreports or
+Compatible with django 1.0-1.4. Tested only on MySQL, bugreports or
 testreports for other databases are welcome.

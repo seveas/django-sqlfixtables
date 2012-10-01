@@ -10,7 +10,7 @@ import sys
 # Since this thing relies on django internals that are not guaranteed to be stable,
 # do a strict version check.
 COMPAT_MIN = '1.0'
-COMPAT_MAX = '1.3.9999'
+COMPAT_MAX = '1.4.9999'
 
 class Command(AppCommand):
     help = """Print SQL statements for model changes, including
@@ -198,9 +198,20 @@ def sql_new_many_to_many(connection, model, style, all_tables):
     return output
 
 equivalence_mapping = {
-    'integer auto_increment': ('int(11)',),
-    'integer': ('int(11)',),
-    'bool': ('tinyint(1)',),
+    'integer': re.compile(r'int\(\d+\)'),
+    'integer auto_increment': re.compile(r'int\(\d+\)'),
+    'integer unsigned': re.compile(r'int\(\d+\)'),
+    'bool': 'tinyint(1)',
 }
 def are_equivalent(old, new):
-    return old == new or old in equivalence_mapping.get(new,[])
+    if old == new:
+        return True
+    if new not in equivalence_mapping:
+        return False
+
+    old_ = equivalence_mapping[new]
+    if old_ == old:
+        return True
+    if hasattr(old_, 'match') and old_.match(old):
+        return True
+    return False
